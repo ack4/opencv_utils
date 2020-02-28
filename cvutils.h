@@ -31,14 +31,26 @@ public:
 
     static cv::Mat cscBGR2YUV2BGR(const cv::Mat &frame);
 
-    double getFps();
+    static cv::Mat stylizePencil(cv::Mat frame);
+
+    int getFps();
+
+    int getElapsedTimeMs();
+
 
 private:
-    cv::TickMeter tm;
-    int counter;
-    double fps;
-    int fps_interval;
+    //for getFps()
+    int count;
+    int fps;
+    double freq;
+    int diffTime;
+    int64 tmStart;
+    int64 tmNow;
 
+    //for getElapsedTimeMs()
+    int64 start;
+    int64 end;
+    int elapsedTime;
 };
 
 #endif //OPENCV_TEST_CVUTILS_H

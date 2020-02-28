@@ -3,33 +3,42 @@
 #include "cvutils.h"
 #include <opencv2/core/core.hpp>
 
-
 CvUtils::CvUtils() {
-    tm = cv::TickMeter();
-    tm.start();
-    counter = 0;
+    count = 0;
     fps = 0;
-    fps_interval = 10;
+    freq = 1000.0 / cv::getTickFrequency();
+    diffTime = 0;
+    tmStart = cv::getTickCount();
+    tmNow = cv::getTickCount();
+
+    start = 0;
+    end = 0;
+    elapsedTime = 0;
 }
 
 CvUtils::~CvUtils() {
     std::cout << "delete!" << std::endl;
 }
 
-double CvUtils::getFps() {
-    if (fps_interval != counter) {
-        counter++;
-        return fps;
-    } else {
-        tm.stop();
-        fps = fps_interval / tm.getTimeSec();
-        tm.reset();
-        counter = 0;
-        tm.start();
-        return fps;
+int CvUtils::getFps() {
+    count += 1;
+    tmNow = cv::getTickCount();
+    diffTime = static_cast<int>(static_cast<double>(tmNow - tmStart) * freq);
+    if (diffTime >= 1000) {
+        fps = count;
+        count = 0;
+        tmStart = tmNow;
     }
-
+    return fps;
 }
+
+int CvUtils::getElapsedTimeMs() {
+    end = cv::getTickCount();
+    elapsedTime = static_cast<int>(static_cast<double>(end - start) * freq);
+    start = end;
+    return elapsedTime;
+}
+
 
 void CvUtils::readImg(const std::string &filePath = "/opencv/sources/samples/data/pic6.png") {
     cv::Mat img = cv::imread(filePath);
@@ -117,13 +126,13 @@ cv::Mat CvUtils::cscBGR2YUV2BGR(const cv::Mat &frame) {
 //    yuvCh[1] = createPlain(640, 480, 127);
 //    yuvCh[2] = createPlain(640, 480, 0);
 
-    //色情報の圧縮
+    //compress u,v channels
     yuvCh[1] = resize(yuvCh[1], 0.025);
     yuvCh[1] = resize(yuvCh[1], 40);
     yuvCh[2] = resize(yuvCh[2], 0.025);
     yuvCh[2] = resize(yuvCh[2], 40);
 
-    //チャンネル入れ替え
+    //exchange channels
 //    cv::Mat y = yuvCh[0];
 //    cv::Mat u = yuvCh[1];
 //    cv::Mat v = yuvCh[2];
@@ -138,6 +147,13 @@ cv::Mat CvUtils::cscBGR2YUV2BGR(const cv::Mat &frame) {
     cv::cvtColor(yuvMerge, bgr, cv::COLOR_YUV2BGR);
 
     return bgr;
+}
+
+cv::Mat CvUtils::stylizePencil(cv::Mat frame) {
+    cv::Mat dst8UC1;
+    cv::Mat outFrame;
+    cv::pencilSketch(frame, dst8UC1, outFrame, 60, 0.07f, 0.02f);
+    return outFrame;
 }
 
 
